@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Smart Chinese Reader</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&family=Noto+Serif+SC:wght@200..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f3f4f6;           /* page background */
+      --bg-soft: #e5ebf5;
+      --surface: #ffffff;      /* cards / panels */
+      --surface-soft: #f9fafb;
+      --border: #e2e8f0;
+      --border-subtle: #e5e7eb;
+      --accent: #38bdf8;       /* sky-400 */
+      --accent-soft: rgba(56, 189, 248, 0.14);
+      --accent-strong: #2563eb;/* blue-600 */
+      --accent-stronger: #1d4ed8;
+      --accent-muted: #93c5fd;
+      --text: #0f172a;         /* slate-900 */
+      --text-muted: #6b7280;   /* gray-500 */
+      --sidebar-w: 280px;
+      --drawer-w: 320px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
+      --shadow-subtle: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overscroll-behavior: none;
+    }
+    
+    body { 
+      font-family: system-ui, "Noto Sans Khmer", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+      background: radial-gradient(circle at top, #e0f2fe 0, #f9fafb 32%, #f3f4f6 70%);
+      color: var(--text); 
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    .app { 
+      display: flex; 
+      height: 100dvh; 
+      overflow: hidden; 
+      position: relative; 
+    }
+
+    /* --- 1. SIDEBAR --- */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: rgba(248, 250, 252, 0.96);
+      backdrop-filter: blur(12px);
+      border-right: 1px solid var(--border-subtle);
+      padding: 1.25rem 1.1rem 1.25rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 50;
+      flex-shrink: 0;
+      transition: transform 0.3s ease, margin-left 0.3s ease, box-shadow var(--transition-fast);
+      box-shadow: var(--shadow-subtle);
+    }
+    .sidebar.collapsed { 
+      margin-left: calc(var(--sidebar-w) * -1); 
+      box-shadow: none;
+    }
+
+    .header-row { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      gap: 0.6rem;
+    }
+
+    .app-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      background: rgba(59,130,246,0.08);
+      color: #1d4ed8;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .title { 
+      font-weight: 700; 
+      font-size: 1.1rem; 
+      color: #0f172a; 
+      letter-spacing: -0.01em;
+    }
+
+    .title-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .icon-btn { 
+      background: transparent; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 1.1rem; 
+      color: var(--text-muted); 
+      padding: 6px; 
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+    }
+    .icon-btn:hover { 
+      background: rgba(148, 163, 184, 0.12); 
+      color: var(--text); 
+      transform: translateY(-0.5px);
+    }
+
+    .file-list {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      padding: 6px;
+      background: linear-gradient(135deg, rgba(248,250,252,0.9), rgba(241,245,249,0.9));
+      border: 1px solid var(--border-subtle);
+    }
+
+    .file-item { 
+      padding: 7px 9px; 
+      border-radius: var(--radius-sm); 
+      cursor: pointer; 
+      font-size: 0.85rem; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      color: #475569;
+      transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+      margin-bottom: 2px;
+    }
+
+    .file-item:hover { 
+      background: rgba(148, 163, 184, 0.09); 
+      transform: translateY(-1px);
+    }
+
+    .file-item.active { 
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.28), rgba(37,99,235,0.2));
+      color: #0b1120; 
+      font-weight: 600; 
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.25);
+    }
+
+    .file-item-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-item-meta {
+      font-size: 0.7rem;
+      color: rgba(15,23,42,0.55);
+      margin-left: 6px;
+    }
+
+    .del-file { 
+      color: #ef4444; 
+      opacity: 0; 
+      transition: opacity var(--transition-fast), transform var(--transition-fast); 
+      padding: 2px 6px; 
+      border-radius: 999px;
+      font-size: 0.75rem;
+      background: transparent;
+    }
+    .file-item:hover .del-file { 
+      opacity: 1; 
+      transform: translateY(-0.5px);
+      background: rgba(254,226,226,0.9);
+    }
+
+    .input-group { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 4px; 
+    }
+
+    .label { 
+      font-size: 0.75rem; 
+      font-weight: 600; 
+      color: #64748b; 
+      text-transform: uppercase; 
+      letter-spacing: 0.06em; 
+    }
+    
+    input[type="text"], 
+    input[type="password"], 
+    textarea, 
+    select {
+      width: 100%; 
+      padding: 8px 9px; 
+      border: 1px solid var(--border); 
+      border-radius: 999px;
+      font-size: 0.85rem; 
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast); 
+      background: rgba(255,255,255,0.92);
+      font-family: inherit;
+    }
+
+    textarea {
+      border-radius: var(--radius-md);
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    input:focus, textarea:focus, select:focus { 
+      outline: none; 
+      border-color: var(--accent-strong); 
+      box-shadow: 0 0 0 1px rgba(37,99,235,0.3), 0 8px 20px rgba(37,99,235,0.14); 
+      background: #ffffff;
+    }
+    
+    .btn {
+      width: 100%; 
+      padding: 10px 12px; 
+      border-radius: 999px; 
+      border: none; 
+      cursor: pointer;
+      font-weight: 600; 
+      font-size: 0.9rem; 
+      color: white; 
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), background var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary { 
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent-stronger)); 
+      box-shadow: 0 14px 30px rgba(37, 99, 235, 0.38);
+    }
+
+    .btn-print { 
+      background: linear-gradient(135deg, #10b981, #059669); 
+      margin-top: 6px; 
+      box-shadow: 0 14px 30px rgba(16, 185, 129, 0.32);
+    }
+
+    .btn-batch { 
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed); 
+      margin-top: 6px; 
+      box-shadow: 0 14px 30px rgba(124, 58, 237, 0.35);
+    }
+
+    .btn:hover { 
+      opacity: 0.96; 
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: none;
+    }
+
+    .btn:disabled { 
+      opacity: 0.5; 
+      cursor: not-allowed; 
+      box-shadow: none;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border-radius: var(--radius-md);
+      padding: 0.95rem 0.85rem;
+      cursor: pointer;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.18), rgba(241,245,249,0.9));
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      align-items: flex-start;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dropzone::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(255,255,255,0.4), transparent 55%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .dropzone-title {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .dropzone-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: rgba(37,99,235,0.12);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #1d4ed8;
+    }
+
+    .dropzone-sub {
+      color: #6b7280;
+      font-size: 0.75rem;
+    }
+
+    .section-label-row {
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-top: 0.45rem;
+    }
+
+    .section-label-row-badge {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.1);
+      color: #64748b;
+    }
+
+    .field-hint {
+      margin-top: 2px;
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+
+    .field-hint code {
+      background: rgba(15,23,42,0.04);
+      padding: 0 4px;
+      border-radius: 4px;
+      font-size: 0.68rem;
+    }
+
+    /* --- 2. MAIN CONTENT --- */
+    .main { 
+      flex: 1; 
+      position: relative; 
+      overflow-y: auto; 
+      display: flex; 
+      justify-content: center; 
+      padding: 1.8rem 2rem; 
+    }
+
+    .page-wrapper { 
+      width: 100%; 
+      max-width: 860px; 
+      padding-bottom: 4rem; 
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .editor-shell {
+      border-radius: var(--radius-lg);
+      padding: 0.75rem 0.85rem 0.85rem;
+      background: rgba(248,250,252,0.96);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.15rem 0.4rem 0.45rem;
+      gap: 0.6rem;
+    }
+
+    .editor-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .editor-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 5px rgba(34,197,94,0.16);
+    }
+
+    .editor-tag {
+      padding: 0.12rem 0.46rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.4);
+      font-size: 0.72rem;
+      color: #475569;
+    }
+
+    .editor-caption {
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+
+    .page-shell {
+      border-radius: var(--radius-lg);
+      padding: 0.65rem;
+      background: rgba(248,250,252,0.96);
+      border: 1px solid rgba(203,213,225,0.75);
+      box-shadow: var(--shadow-soft);
+    }
+    
+    /* --- PAPER & GRID TEXTURE --- */
+    .page-a4 {
+      background-color: #ffffff;
+      min-height: 1000px; 
+      box-shadow: inset 0 0 0 1px rgba(226,232,240,0.7);
+      padding: 2.4rem 2.6rem; 
+      border-radius: calc(var(--radius-lg) - 4px);
+      position: relative;
+      overflow: hidden;
+      
+      background-image: 
+        linear-gradient(#f4f4f5 1px, transparent 1px),
+        linear-gradient(90deg, rgba(226,232,240,0.3) 1px, transparent 1px);
+      background-size: 24px 24px, 36px 36px;
+      background-position: 0 14px, 0 0;
+    }
+
+    #markdown-root { 
+      line-height: 1.6; 
+      font-size: 1rem; 
+      color: #334155; 
+      white-space: pre-wrap; 
+      position: relative;
+      z-index: 1;
+    }
+
+    #markdown-root p { 
+      margin-bottom: 0.72em; 
+      margin-top: 0; 
+    }
+
+    #markdown-root h1, #markdown-root h2 { 
+      margin-top: 1.1em; 
+      margin-bottom: 0.45em; 
+      color: #0f172a; 
+      line-height: 1.2; 
+      letter-spacing: -0.02em;
+    }
+
+    #markdown-root h1 {
+      font-size: 1.55rem;
+      border-bottom: 1px solid rgba(209,213,219, 0.9);
+      padding-bottom: 0.35rem;
+    }
+
+    #markdown-root h2 {
+      font-size: 1.25rem;
+    }
+
+    .mobile-menu-btn {
+      position: fixed; 
+      top: 1rem; 
+      left: 1rem; 
+      z-index: 20; 
+      background: rgba(255,255,255,0.96);
+      border: 1px solid var(--border); 
+      padding: 7px 14px; 
+      border-radius: 999px;
+      font-weight: 600; 
+      cursor: pointer; 
+      box-shadow: var(--shadow-subtle);
+      display: none; 
+      font-size: 0.85rem;
+    }
+    .sidebar.collapsed + .main .mobile-menu-btn { display: block; }
+
+    /* --- 3. RIGHT DRAWER --- */
+    .right-drawer {
+      position: fixed; 
+      top: 0; 
+      right: calc(var(--drawer-w) * -1); 
+      bottom: 0;
+      width: var(--drawer-w); 
+      background: rgba(248, 250, 252, 0.97);
+      backdrop-filter: blur(14px);
+      box-shadow: -18px 0 40px rgba(15,23,42,0.18); 
+      z-index: 50;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex; 
+      flex-direction: column; 
+      border-left: 1px solid var(--border-subtle);
+      border-radius: 18px 0 0 18px;
+      overflow: hidden;
+    }
+    .right-drawer.open { right: 0; }
+
+    .drawer-section { 
+      border-bottom: 1px solid var(--border-subtle); 
+    }
+
+    .section-header {
+      width: 100%; 
+      padding: 0.85rem 1rem; 
+      background: transparent; 
+      border: none;
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center;
+      cursor: pointer; 
+      font-size: 0.88rem; 
+      font-weight: 600; 
+      color: #1f2937;
+      transition: background var(--transition-fast), color var(--transition-fast); 
+      text-align: left;
+    }
+    .section-header:hover { 
+      background: rgba(226, 232, 240, 0.8);
+    }
+
+    .section-header span:first-child {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .section-header span:first-child::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: rgba(148,163,184,0.8);
+    }
+
+    .section-header.active span:first-child::before {
+      background: var(--accent-strong);
+    }
+
+    .section-icon { 
+      transition: transform var(--transition-fast); 
+      color: #94a3b8; 
+      font-size: 0.78rem;
+    }
+    .section-header.active .section-icon { 
+      transform: rotate(180deg); 
+      color: var(--accent-strong); 
+    }
+
+    .section-content { 
+      max-height: 0; 
+      overflow: hidden; 
+      transition: max-height 0.3s ease-out; 
+      background: rgba(248,250,252,0.9); 
+    }
+    .section-content.open { 
+      max-height: 75vh; 
+      overflow-y: auto; 
+    }
+
+    .section-inner { 
+      padding: 10px 12px 14px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+    }
+
+    /* --- CARD STYLES --- */
+    .card-item { 
+      background: rgba(255,255,255,0.98); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-md); 
+      padding: 9px 10px; 
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+      box-shadow: 0 10px 25px rgba(15,23,42,0.03);
+    }
+    .card-item:hover { 
+      border-color: var(--accent); 
+      box-shadow: 0 14px 30px rgba(37,99,235,0.16);
+      transform: translateY(-1px);
+    }
+
+    .card-summary { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      cursor: pointer; 
+      font-size: 0.82rem; 
+      font-weight: 600; 
+      color: #0f172a; 
+    }
+
+    .card-chevron { 
+      font-size: 0.7rem; 
+      color: #94a3b8; 
+      transition: transform var(--transition-fast), color var(--transition-fast); 
+    }
+
+    .card-item.expanded .card-chevron { 
+      transform: rotate(90deg); 
+      color: var(--accent-strong); 
+    }
+
+    .card-details { 
+      display: none; 
+      margin-top: 9px; 
+      padding-top: 9px; 
+      border-top: 1px dashed #e2e8f0; 
+    }
+
+    .card-item.expanded .card-details { 
+      display: block; 
+    }
+
+    .card-row-label { 
+      font-size: 0.7rem; 
+      font-weight: 700; 
+      color: #94a3b8; 
+      margin-bottom: 4px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.05em;
+    }
+    
+    .card-text-block { 
+      margin-bottom: 8px; 
+      line-height: 1.6; 
+      font-size: 0.9rem; 
+      color: #334155; 
+      font-family: "Noto Sans Khmer", sans-serif; 
+    }
+    
+    .card-pinyin-ctrl { 
+      margin-bottom: 8px; 
+      display: flex; 
+      align-items: center; 
+      gap: 6px; 
+      font-size: 0.75rem; 
+      color: #64748b; 
+    }
+
+    .card-actions { 
+      margin-top: 8px; 
+      display: flex; 
+      justify-content: flex-end; 
+    }
+
+    .btn-xs { 
+      font-size: 0.72rem; 
+      padding: 2px 9px; 
+      border-radius: 999px; 
+      border: none; 
+      cursor: pointer; 
+      font-weight: 600; 
+    }
+
+    .btn-del { 
+      background: #fef2f2; 
+      color: #ef4444; 
+    }
+
+    /* --- 4. CHINESE STYLES (Noto Serif SC) --- */
+    .zh-word {
+      font-family: "Noto Serif SC", serif;
+      cursor: pointer; 
+      padding: 2px 1px; 
+      border-radius: 6px;
+      display: inline-flex; 
+      flex-direction: column; 
+      align-items: center;
+      vertical-align: text-bottom; 
+      margin: 0 1px; 
+      position: relative;
+      transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .zh-word:hover { 
+      background: rgba(56,189,248,0.18); 
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.6), 0 10px 20px rgba(37,99,235,0.2);
+      transform: translateY(-1px);
+    }
+
+    .zh-word.active { 
+      background: rgba(59,130,246,0.22); 
+      box-shadow: 0 0 0 1px var(--accent-strong), 0 16px 30px rgba(37,99,235,0.45); 
+      z-index: 10; 
+      transform: translateY(-1px);
+    }
+
+    .zh-pinyin { 
+      font-size: 0.72em; 
+      color: #6b7280; 
+      line-height: 1; 
+      font-family: sans-serif; 
+      margin-bottom: 1px; 
+    }
+
+    .zh-base { 
+      line-height: 1.2; 
+      font-size: 1.05em;
+    }
+    
+    body.inline-pinyin-off .zh-pinyin { display: none; }
+    .card-content-area .zh-pinyin { display: block !important; } 
+    .card-content-area.pinyin-hidden .zh-pinyin { display: none !important; }
+
+    /* --- 5. HIGHLIGHTS --- */
+    .note-highlight { 
+      background-color: #fde68a; 
+      border-bottom: 2px solid #d97706; 
+      padding-top: 1px; 
+      cursor: pointer; 
+      border-radius: 3px; 
+      transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .note-highlight:hover { 
+      background-color: #fbbf24; 
+      box-shadow: 0 2px 0 rgba(194,65,12,0.45);
+    }
+
+    .note-highlight.active { 
+      background-color: #f59e0b; 
+      color: white; 
+      border-bottom-color: #78350f; 
+    }
+
+    .note-indicator { 
+      font-size: 0.6em; 
+      vertical-align: top; 
+      margin-left: 1px; 
+      color: #d97706; 
+    }
+
+    /* --- 6. POPUPS --- */
+    .zh-tooltip {
+      position: absolute; 
+      bottom: 100%; 
+      left: 50%; 
+      transform: translate(-50%, -8px);
+      background: #020617; 
+      color: #f9fafb; 
+      padding: 0.5rem 0.75rem;
+      border-radius: 999px; 
+      font-size: 0.8rem; 
+      white-space: nowrap; 
+      z-index: 50;
+      box-shadow: 0 14px 35px rgba(15,23,42,0.55); 
+      pointer-events: none;
+    }
+
+    .zh-tooltip-line { 
+      display: block; 
+      font-family: "Noto Sans Khmer", sans-serif; 
+    }
+
+    .zh-tooltip::after { 
+      content: ""; 
+      position: absolute; 
+      top: 100%; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      border-width: 6px; 
+      border-style: solid; 
+      border-color: #020617 transparent transparent transparent; 
+    }
+
+    .popup-base {
+      position: absolute; 
+      z-index: 100; 
+      background: rgba(255,255,255,0.98); 
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg); 
+      box-shadow: 0 20px 50px -8px rgba(15,23,42,0.36);
+      min-width: 240px; 
+      max-width: 320px; 
+      font-size: 0.9rem; 
+      animation: popIn 0.18s ease-out;
+      font-family: "Noto Sans Khmer", sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    @keyframes popIn { 
+      from { 
+        opacity: 0; 
+        transform: translateY(5px) scale(0.98); 
+      } 
+      to { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+      } 
+    }
+
+    .popup-header { 
+      padding: 8px 12px; 
+      background: linear-gradient(135deg, rgba(37,99,235,0.9), rgba(56,189,248,0.85)); 
+      border-bottom: 1px solid var(--border); 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      font-weight: 600; 
+      color: #f9fafb; 
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0; 
+    }
+
+    .popup-body { 
+      padding: 11px 12px 12px; 
+      color: #334155; 
+      background: #f9fafb;
+    }
+
+    .close-x { 
+      cursor: pointer; 
+      color: #e5e7eb; 
+      font-size: 0.9rem;
+    }
+
+    .btn-group { 
+      display: flex; 
+      gap: 8px; 
+      margin-top: 8px; 
+    }
+
+    .popup-btn { 
+      flex: 1; 
+      padding: 6px; 
+      border-radius: 999px; 
+      border: none; 
+      color: white; 
+      font-size: 0.8rem; 
+      cursor: pointer; 
+      font-weight: 600;
+    }
+
+    .bg-blue { 
+      background: linear-gradient(135deg, var(--accent-strong), var(--accent-stronger)); 
+    }
+
+    .bg-amber { 
+      background: linear-gradient(135deg, #f59e0b, #d97706); 
+    }
+
+    .drawer-toggle-fab {
+      position: fixed; 
+      right: 1.8rem; 
+      bottom: 1.6rem; 
+      width: 3.4rem; 
+      height: 3.4rem;
+      border-radius: 999px; 
+      background: radial-gradient(circle at top left, #38bdf8, #2563eb);
+      color: white;
+      border: none; 
+      box-shadow: 0 18px 45px rgba(37,99,235,0.55); 
+      font-size: 1.5rem;
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      z-index: 35; 
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .drawer-toggle-fab:hover { 
+      transform: translateY(-1px) scale(1.03); 
+      box-shadow: 0 24px 60px rgba(37,99,235,0.7);
+      filter: brightness(1.03);
+    }
+
+    .overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(15,23,42,0.42); 
+      z-index: 40; 
+      opacity: 0; 
+      pointer-events: none; 
+      transition: opacity 0.3s; 
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay.visible { 
+      opacity: 1; 
+      pointer-events: auto; 
+    }
+
+    .speak-btn {
+      border: none;
+      background: rgba(15,23,42,0.15);
+      color: #e5e7eb;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+      margin-right: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
+    }
+
+    .speak-btn:hover {
+      background: rgba(15,23,42,0.28);
+      transform: translateY(-0.5px);
+      color: #ffffff;
+    }
+
+    .speak-btn:active {
+      transform: translateY(0);
+      opacity: 0.9;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { 
+        position: fixed; 
+        height: 100%; 
+        width: 80%; 
+        max-width: 300px; 
+        margin-left: 0; 
+        transform: translateX(-100%); 
+        box-shadow: none; 
+        border-radius: 0 16px 16px 0;
+      }
+
+      .sidebar.open { 
+        transform: translateX(0); 
+        box-shadow: 20px 0 50px rgba(15,23,42,0.45); 
+      }
+
+      .main { 
+        padding: 0.75rem 0.75rem 2.5rem; 
+      }
+
+      .page-wrapper {
+        max-width: none;
+      }
+
+      .page-a4 { 
+        width: 100%; 
+        border-radius: 16px; 
+        padding: 1.5rem 1.6rem; 
+        min-height: calc(100vh - 2rem); 
+      }
+
+      .right-drawer { 
+        width: 88%; 
+        max-width: 330px; 
+        border-radius: 20px 0 0 20px;
+      }
+
+      .mobile-menu-btn { 
+        display: flex !important; 
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .drawer-toggle-fab {
+        right: 1.2rem;
+        bottom: 1.15rem;
+      }
+
+      /* Mobile bottom-sheet style for selection popup */
+      .popup-base.selection-popup.mobile-bottom {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: 1rem !important;
+        top: auto !important;
+        max-width: 92vw;
+        width: 92vw;
+      }
+    }
+
+    @media print {
+      .sidebar, 
+      .right-drawer, 
+      .drawer-toggle-fab, 
+      .mobile-menu-btn, 
+      .overlay, 
+      .icon-btn { 
+        display: none !important; 
+      }
+
+      html, 
+      body, 
+      .app, 
+      .main { 
+        height: auto !important; 
+        overflow: visible !important; 
+        display: block !important; 
+        position: static !important; 
+        background: white !important;
+      }
+
+      .page-wrapper { 
+        width: 100% !important; 
+        max-width: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+      }
+
+      .page-shell {
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: white !important;
+      }
+
+      .page-a4 { 
+        width: 100% !important; 
+        box-shadow: none !important; 
+        padding: 0 !important; 
+        margin: 0 !important; 
+        min-height: 0 !important; 
+        background: white !important;
+        background-image: none !important;
+      }
+
+      #markdown-root { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 100%; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        color: black !important; 
+      }
+
+      .zh-word { 
+        display: inline-block !important; 
+        page-break-inside: avoid; 
+        background: none !important; 
+        box-shadow: none !important; 
+        font-family: "Noto Serif SC", serif !important; 
+      }
+
+      .zh-pinyin, 
+      .zh-base { 
+        color: black !important; 
+      }
+
+      body.inline-pinyin-off .zh-pinyin { 
+        display: none !important; 
+      }
+
+      body * { 
+        visibility: hidden; 
+      }
+
+      #markdown-root, 
+      #markdown-root * { 
+        visibility: visible; 
+      }
+    }
+  </style>
+</head>
+<body class="inline-pinyin-off">
+
+  <div class="app">
+    <div id="sidebar-overlay" class="overlay"></div>
+    <div id="drawer-overlay" class="overlay"></div>
+    <!-- Overlay for selection popup on mobile -->
+    <div id="selection-overlay" class="overlay"></div>
+
+    <aside id="sidebar" class="sidebar">
+      <div class="header-row">
+        <div class="title-wrap">
+          <span class="app-pill">Smart Reader</span>
+          <div class="title">Chinese • 中文</div>
+          <div class="title-sub">Click any word to see pinyin & translation</div>
+        </div>
+        <button id="collapse-sidebar" class="icon-btn" title="Hide sidebar">✕</button>
+      </div>
+
+      <div id="dropzone" class="dropzone">
+        <div class="dropzone-title">
+          <span class="dropzone-icon">⬆︎</span>
+          <span>Drop or choose file</span>
+        </div>
+        <div class="dropzone-sub">Supported: <strong>.md</strong>, <strong>.txt</strong>, <strong>.pdf</strong></div>
+      </div>
+
+      <input id="file-input" type="file" accept=".md,.markdown,.txt,.pdf" style="display:none" />
+
+      <div class="section-label-row">
+        <span class="label">Files</span>
+        <span class="section-label-row-badge">Local</span>
+      </div>
+
+      <div id="file-tree" class="file-list"></div>
+
+      <div style="margin-top:auto; display:flex; flex-direction:column; gap:1rem;">
+        <div class="input-group">
+          <label class="label">Translate API Key</label>
+          <input type="password" id="api-key-input" placeholder="API key..." />
+        </div>
+
+        <div class="input-group">
+          <label class="label">Provider</label>
+          <select id="provider-select">
+            <option value="google">Google Translate</option>
+            <option value="bing">Bing (Microsoft)</option>
+            <option value="deepl">DeepL</option>
+            <option value="youdao">Youdao</option>
+          </select>
+          <div class="field-hint">
+            For Bing, use <code>KEY|REGION</code>, e.g. <code>abc123|eastasia</code>.<br>
+            For Youdao, call via your backend (front-end here only shows a placeholder).
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid var(--border); padding-top:0.85rem; display:flex; flex-direction:column; gap:0.5rem;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer; color:#4b5563;">
+          <input type="checkbox" id="pinyin-inline-toggle"> Show Inline Pinyin
+        </label>
+         
+        <div style="margin: 4px 0;">
+          <label class="label" style="font-size:0.75rem; display:block; margin-bottom:4px;">Translate To</label>
+          <select id="lang-select" style="width:100%; padding:6px;">
+            <option value="en">English (Default)</option>
+            <option value="km">Khmer (ខ្មែរ)</option>
+          </select>
+        </div>
+
+        <button id="batch-trans-btn" class="btn btn-batch">⚡ Pre-translate Vocabulary</button>
+        <button id="render-btn" class="btn btn-primary">⟳ Render / Refresh</button>
+        <button id="print-btn" class="btn btn-print">🖨 Print Page</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <button id="mobile-menu-btn" class="mobile-menu-btn">
+        ☰ Files
+      </button>
+
+      <div class="page-wrapper">
+        <div class="editor-shell">
+          <div class="editor-header">
+            <div class="editor-header-left">
+              <span class="editor-dot"></span>
+              <span>Markdown input</span>
+            </div>
+            <div class="editor-caption">Paste or type your Chinese text here</div>
+          </div>
+          <textarea id="md-input" placeholder="Paste Markdown content here..."></textarea>
+        </div>
+
+        <div class="page-shell">
+          <div id="markdown-root" class="page-a4"></div>
+        </div>
+      </div>
+    </main>
+
+    <aside id="right-drawer" class="right-drawer">
+      <div class="header-row" style="padding:1rem; background:rgba(248,250,252,0.95); border-bottom:1px solid var(--border-subtle);">
+        <div class="title" style="font-size:1rem;">Study Tools</div>
+        <button id="close-drawer" class="icon-btn" title="Close tools">✕</button>
+      </div>
+
+      <div class="drawer-section">
+        <button class="section-header active" onclick="toggleSection('sec-trans', this)">
+          <span>🌐 Saved Translations</span> 
+          <span class="section-icon">▼</span>
+        </button>
+        <div id="sec-trans" class="section-content open">
+          <div id="list-trans" class="section-inner"></div>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <button class="section-header active" onclick="toggleSection('sec-notes', this)">
+          <span>📌 Sticky Notes</span> 
+          <span class="section-icon">▼</span>
+        </button>
+        <div id="sec-notes" class="section-content open">
+          <div id="list-notes" class="section-inner"></div>
+        </div>
+      </div>
+    </aside>
+
+    <button id="drawer-fab" class="drawer-toggle-fab" title="Open study tools">📝</button>
+    <div id="translate-popup" class="popup-base" style="display:none;"></div>
+  </div>
+
+  <!-- Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://unpkg.com/pinyin-pro"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <script>
+    if (typeof pdfjsLib !== 'undefined') {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const els = {
+      root: document.getElementById('markdown-root'),
+      mdInput: document.getElementById('md-input'),
+      sidebar: document.getElementById('sidebar'),
+      drawer: document.getElementById('right-drawer'),
+      overlays: {
+        sidebar: document.getElementById('sidebar-overlay'),
+        drawer: document.getElementById('drawer-overlay'),
+        selection: document.getElementById('selection-overlay'),
+      },
+      btns: {
+        render: document.getElementById('render-btn'),
+        print: document.getElementById('print-btn'),
+        batch: document.getElementById('batch-trans-btn'),
+        collapse: document.getElementById('collapse-sidebar'),
+        mobileMenu: document.getElementById('mobile-menu-btn'),
+        fab: document.getElementById('drawer-fab'),
+        closeDrawer: document.getElementById('close-drawer')
+      },
+      toggles: {
+        pinyin: document.getElementById('pinyin-inline-toggle')
+      },
+      lists: {
+        files: document.getElementById('file-tree'),
+        trans: document.getElementById('list-trans'),
+        notes: document.getElementById('list-notes')
+      },
+      inputs: {
+        file: document.getElementById('file-input'),
+        drop: document.getElementById('dropzone'),
+        key: document.getElementById('api-key-input'),
+        lang: document.getElementById('lang-select'),
+        provider: document.getElementById('provider-select')
+      },
+      popups: {
+        trans: document.getElementById('translate-popup')
+      }
+    };
+
+    let state = { currentFile: null, files: [], notes: {}, translations: [] };
+    const transCache = new Map();
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Extra delay on mobile before showing selection dialog
+    const MOBILE_SELECTION_DELAY = 1000;
+    let mobileSelectionTimer = null;
+
+    window.toggleSection = (id, btn) => {
+      document.getElementById(id).classList.toggle('open');
+      btn.classList.toggle('active');
+    };
+
+    function loadData() {
+      try {
+        state.files = JSON.parse(localStorage.getItem('uploadedMdFiles') || '[]');
+        state.notes = JSON.parse(localStorage.getItem('stickyNotes') || '{}');
+        state.translations = JSON.parse(localStorage.getItem('savedTranslations') || '[]');
+        els.inputs.key.value = localStorage.getItem('translateApiKey') || localStorage.getItem('googleTranslateApiKey') || '';
+        els.inputs.lang.value = localStorage.getItem('targetLang') || 'en';
+        if (els.inputs.provider) {
+          els.inputs.provider.value = localStorage.getItem('translateProvider') || 'google';
+        }
+        
+        const cachedTrans = localStorage.getItem('translationCache');
+        if (cachedTrans) {
+          const parsed = JSON.parse(cachedTrans);
+          Object.entries(parsed).forEach(([k,v]) => transCache.set(k, v));
+        }
+      } catch(e) {}
+    }
+
+    function saveData(key) {
+      if (key === 'files') localStorage.setItem('uploadedMdFiles', JSON.stringify(state.files));
+      if (key === 'notes') localStorage.setItem('stickyNotes', JSON.stringify(state.notes));
+      if (key === 'trans') localStorage.setItem('savedTranslations', JSON.stringify(state.translations));
+      if (key === 'key') {
+        localStorage.setItem('translateApiKey', els.inputs.key.value.trim());
+        localStorage.setItem('googleTranslateApiKey', els.inputs.key.value.trim());
+      }
+      if (key === 'lang') localStorage.setItem('targetLang', els.inputs.lang.value);
+      if (key === 'provider' && els.inputs.provider) {
+        localStorage.setItem('translateProvider', els.inputs.provider.value);
+      }
+      if (key === 'cache') {
+        const obj = {};
+        transCache.forEach((v,k) => obj[k] = v);
+        localStorage.setItem('translationCache', JSON.stringify(obj));
+      }
+    }
+
+    // --- FILES ---
+    function renderFileList() {
+      els.lists.files.innerHTML = '';
+      if (state.files.length === 0) {
+        els.lists.files.innerHTML = '<div style="padding:8px; font-size:0.8rem; color:#94a3b8;">No files yet. Drop a Markdown or PDF to get started.</div>';
+        return;
+      }
+      state.files.forEach(f => {
+        const div = document.createElement('div');
+        div.className = `file-item ${state.currentFile === f.name ? 'active' : ''}`;
+        div.innerHTML = `
+          <span class="file-item-name">${f.name}</span>
+          <span class="file-item-meta">${f.name.toLowerCase().endsWith('.pdf') ? 'PDF' : 'Text'}</span>
+          <span class="del-file">✕</span>
+        `;
+        div.onclick = () => loadFile(f.name);
+        div.querySelector('.del-file').onclick = (e) => {
+          e.stopPropagation();
+          if (confirm('Delete file?')) {
+            state.files = state.files.filter(x => x.name !== f.name);
+            if (state.currentFile === f.name) { 
+              state.currentFile = null; 
+              els.mdInput.value = ''; 
+              els.root.innerHTML = ''; 
+            }
+            saveData('files'); 
+            renderFileList();
+          }
+        };
+        els.lists.files.appendChild(div);
+      });
+    }
+
+    function addFile(name, content) {
+      const idx = state.files.findIndex(f => f.name === name);
+      if (idx >= 0) state.files[idx] = {name, content};
+      else state.files.push({name, content});
+      saveData('files'); 
+      loadFile(name);
+    }
+
+    function loadFile(name) {
+      const f = state.files.find(x => x.name === name);
+      if (f) {
+        state.currentFile = name;
+        els.mdInput.value = f.content;
+        renderMarkdown(); 
+        renderFileList();
+        if (isMobile()) toggleSidebar(false);
+      }
+    }
+
+    // --- SHARED TEXT PROCESSOR ---
+    function processTextForPinyin(container, textContent) {
+        container.textContent = '';
+        const frag = document.createDocumentFragment();
+        const parts = textContent.split(/([\u4e00-\u9fff]+)/g);
+        parts.forEach(part => {
+             if (/[\u4e00-\u9fff]/.test(part)) {
+                segmentChineseChunk(part).forEach(t => {
+                   const span = document.createElement('span');
+                   span.className = 'zh-word';
+                   span.dataset.text = t;
+                   span.textContent = t;
+                   frag.appendChild(span);
+                });
+             } else {
+                frag.appendChild(document.createTextNode(part));
+             }
+        });
+        container.appendChild(frag);
+        const { pinyin } = pinyinPro;
+        container.querySelectorAll('.zh-word').forEach(span => {
+          const txt = span.dataset.text;
+          const py = pinyin(txt, { toneType: 'mark', type: 'array' }).join(' ');
+          span.innerHTML = `<span class="zh-pinyin">${py}</span><span class="zh-base">${txt}</span>`;
+          span.dataset.pinyin = py;
+       });
+    }
+
+    function segmentChineseChunk(text) {
+        if (Intl.Segmenter) {
+            const segmenter = new Intl.Segmenter('zh-Hans', { granularity: 'word' });
+            const segments = [];
+            for (const seg of segmenter.segment(text)) segments.push(seg.segment);
+            return segments;
+        }
+        return text.split('');
+    }
+
+    // --- UI LISTS ---
+    window.toggleCard = (card) => card.classList.toggle('expanded');
+
+    function renderTransList() {
+      const list = els.lists.trans; 
+      list.innerHTML = '';
+      if (state.translations.length === 0) { 
+        list.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:0.8rem;">No saved translations yet. Select text → Translate → Save.</div>'; 
+        return; 
+      }
+      
+      state.translations.forEach((t, idx) => {
+         const el = document.createElement('div'); 
+         el.className = 'card-item';
+         el.innerHTML = `
+           <div class="card-summary" onclick="toggleCard(this.parentNode)">
+             <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.original}</span>
+             <span class="card-chevron">▶</span>
+           </div>
+           <div class="card-details">
+             <div class="card-pinyin-ctrl">
+               <label><input type="checkbox" class="card-pinyin-check"> Show Pinyin</label>
+             </div>
+             <div class="card-row-label">Original</div>
+             <div class="card-text-block card-content-area pinyin-hidden"></div>
+             <div class="card-row-label">Translation (${t.lang || 'en'})</div>
+             <div class="card-text-block">${t.translated}</div>
+             <div class="card-actions"><button class="btn-xs btn-del">Delete</button></div>
+           </div>
+         `;
+         const contentArea = el.querySelector('.card-content-area');
+         processTextForPinyin(contentArea, t.original);
+         
+         el.querySelector('.card-pinyin-check').onchange = (e) => {
+             if (e.target.checked) contentArea.classList.remove('pinyin-hidden');
+             else contentArea.classList.add('pinyin-hidden');
+         };
+
+         el.querySelector('.btn-del').onclick = (e) => { 
+           e.stopPropagation(); 
+           state.translations.splice(idx, 1); 
+           saveData('trans'); 
+           renderTransList(); 
+         };
+         list.appendChild(el);
+      });
+    }
+
+    function renderNotesList() {
+      const list = els.lists.notes; 
+      list.innerHTML = '';
+      const fileNotes = state.currentFile ? (state.notes[state.currentFile] || []) : [];
+      if (fileNotes.length === 0) { 
+        list.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:0.8rem;">No notes yet. Highlight text → Note.</div>'; 
+        return; 
+      }
+      fileNotes.forEach(n => {
+         const el = document.createElement('div'); 
+         el.className = 'card-item';
+         el.innerHTML = `
+           <div class="card-head" style="font-size:0.82rem; font-weight:600; color:#0f172a; margin-bottom:4px;">"${n.text.substring(0,20)}..."</div>
+           <div class="card-body" style="font-size:0.83rem; color:#4b5563; line-height:1.5;">${n.note}</div>
+           <div class="card-actions" style="margin-top:6px;"><button class="btn-xs btn-del">Delete</button></div>`;
+         el.querySelector('.btn-del').onclick = (e) => { 
+           e.stopPropagation(); 
+           if (confirm('Delete note?')) deleteNote(n.id); 
+         };
+         el.onclick = () => scrollToNote(n.id, n.note);
+         list.appendChild(el);
+      });
+    }
+
+    function scrollToNote(id, text) {
+       const el = els.root.querySelector(`.note-highlight[data-note-id="${id}"]`);
+       if (el) { 
+         if (isMobile()) toggleDrawer(false); 
+         el.scrollIntoView({behavior:'smooth', block:'center'}); 
+         setTimeout(() => showNotePopup(el, text), 260); 
+       }
+    }
+
+    function addNote(text, noteText) {
+       if (!state.currentFile) return;
+       if (!state.notes[state.currentFile]) state.notes[state.currentFile] = [];
+       state.notes[state.currentFile].push({ id: Date.now().toString(), text, note: noteText });
+       saveData('notes'); 
+       renderNotesList(); 
+       highlightNotes(); 
+       toggleDrawer(true);
+    }
+
+    function deleteNote(id) {
+       if (!state.currentFile) return;
+       state.notes[state.currentFile] = state.notes[state.currentFile].filter(n => n.id !== id);
+       saveData('notes'); 
+       renderNotesList(); 
+       highlightNotes();
+    }
+
+    // --- Speech ---
+    function speakText(text) {
+      if (!window.speechSynthesis || !text) {
+        alert('Speech is not supported in this browser.');
+        return;
+      }
+
+      const utter = new SpeechSynthesisUtterance(text);
+
+      // If contains Chinese, use zh-CN
+      if (/[\u4e00-\u9fff]/.test(text)) {
+        utter.lang = 'zh-CN';
+      } else {
+        const lang = els.inputs.lang.value;
+        if (lang === 'km') utter.lang = 'km-KH';
+        else utter.lang = 'en-US';
+      }
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+
+    // --- API & CACHE ---
+    async function getTranslation(text) {
+      const lang = els.inputs.lang.value;
+      const provider = els.inputs.provider ? els.inputs.provider.value : 'google';
+      const cacheKey = provider + "|" + text + "_" + lang;
+
+      if (transCache.has(cacheKey)) return transCache.get(cacheKey);
+
+      const key = els.inputs.key.value.trim();
+      if (!key) return "(No API Key)";
+
+      try {
+        let translated = null;
+
+        if (provider === 'google') {
+          const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${key}`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              q: text,
+              source:'zh-CN',
+              target: lang,
+              format:'text'
+            })
+          });
+          const data = await res.json();
+          translated = data.data?.translations?.[0]?.translatedText || null;
+        } 
+        else if (provider === 'bing') {
+          // key format: "KEY|REGION"
+          const [subscriptionKey, region] = key.split('|');
+          if (!subscriptionKey || !region) {
+            return "(Bing: key must be KEY|REGION)";
+          }
+
+          const langMap = {
+            en: 'en',
+            km: 'en', // fallback for Khmer
+          };
+
+          const to = langMap[lang] || 'en';
+          const endpoint = `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=zh-Hans&to=${to}`;
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Ocp-Apim-Subscription-Key': subscriptionKey,
+              'Ocp-Apim-Subscription-Region': region,
+              'Content-Type': 'application/json; charset=UTF-8'
+            },
+            body: JSON.stringify([{ Text: text }])
+          });
+
+          const data = await res.json();
+          translated = data[0]?.translations?.[0]?.text || null;
+        }
+        else if (provider === 'deepl') {
+          // DeepL: no Khmer; fallback to EN
+          const langMap = {
+            en: 'EN',
+            km: 'EN',
+          };
+          const targetLang = langMap[lang] || 'EN';
+
+          const params = new URLSearchParams({
+            auth_key: key,
+            text,
+            target_lang: targetLang,
+          });
+
+          const res = await fetch('https://api-free.deepl.com/v2/translate', {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body: params.toString()
+          });
+
+          const data = await res.json();
+          translated = data.translations?.[0]?.text || null;
+        }
+        else if (provider === 'youdao') {
+          // NOTE: real Youdao requires appKey/appSecret signing and should be called from your backend.
+          translated = "(Youdao not implemented on front-end; call your backend proxy here.)";
+        }
+
+        if (translated) {
+          transCache.set(cacheKey, translated);
+          saveData('cache');
+          return translated;
+        }
+      } catch (e) {
+        console.error(e);
+        return "Error";
+      }
+
+      return "Error";
+    }
+
+    // Batch pre-translate
+    els.btns.batch.onclick = async () => {
+      const btn = els.btns.batch;
+      const originalTxt = btn.textContent;
+      const lang = els.inputs.lang.value;
+      const provider = els.inputs.provider ? els.inputs.provider.value : 'google';
+
+      const words = new Set();
+      els.root.querySelectorAll('.zh-word').forEach(el => {
+        const txt = el.dataset.text;
+        if (txt && !transCache.has(provider + "|" + txt + "_" + lang)) words.add(txt);
+      });
+      
+      const wordList = Array.from(words);
+      if (wordList.length === 0) { 
+        alert("All vocab already translated!"); 
+        return; 
+      }
+
+      const key = els.inputs.key.value.trim();
+      if (!key) { 
+        alert("Please enter API Key first."); 
+        return; 
+      }
+
+      btn.disabled = true;
+
+      try {
+        if (provider === 'google') {
+          const BATCH_SIZE = 50;
+          for (let i = 0; i < wordList.length; i += BATCH_SIZE) {
+            const chunk = wordList.slice(i, i + BATCH_SIZE);
+            btn.textContent = `Trans: ${i}/${wordList.length}...`;
+
+            const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${key}`, {
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({
+                q: chunk,
+                source:'zh-CN',
+                target: lang,
+                format:'text'
+              })
+            });
+
+            const data = await res.json();
+            if (data.data?.translations) {
+              data.data.translations.forEach((t, idx) => {
+                transCache.set(provider + "|" + chunk[idx] + "_" + lang, t.translatedText);
+              });
+            }
+            saveData('cache');
+          }
+        } else {
+          // Other providers: call getTranslation one by one
+          for (let i = 0; i < wordList.length; i++) {
+            btn.textContent = `Trans: ${i + 1}/${wordList.length}...`;
+            const w = wordList[i];
+            const tr = await getTranslation(w);
+            transCache.set(provider + "|" + w + "_" + lang, tr);
+            saveData('cache');
+          }
+        }
+
+        btn.textContent = "Done!";
+      } catch (e) {
+        alert("Error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => btn.textContent = originalTxt, 2000);
+      }
+    };
+
+    function createTooltip(span, textPromise) {
+      const existing = span.querySelector('.zh-tooltip');
+      if (existing) existing.remove();
+      const tooltip = document.createElement('div');
+      tooltip.className = 'zh-tooltip';
+      const pinyinLine = document.createElement('span');
+      pinyinLine.className = 'zh-tooltip-line'; 
+      pinyinLine.style.fontWeight = 'bold';
+      pinyinLine.textContent = span.dataset.pinyin || ""; 
+      if (!document.body.classList.contains('inline-pinyin-on')) tooltip.appendChild(pinyinLine);
+      const engLine = document.createElement('span');
+      engLine.className = 'zh-tooltip-line'; 
+      engLine.textContent = "Loading...";
+      tooltip.appendChild(engLine);
+      span.appendChild(tooltip);
+      textPromise.then(en => engLine.textContent = en);
+    }
+
+    // --- RENDERING MAIN DOC ---
+    function renderMarkdown() {
+       els.root.innerHTML = marked.parse(els.mdInput.value);
+       Array.from(els.root.childNodes).forEach(wrapChineseNodes);
+       injectPinyinInRoot();
+       setTimeout(() => { 
+         highlightNotes(); 
+         renderNotesList(); 
+       }, 50);
+    }
+
+    function wrapChineseNodes(node) {
+       if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.nodeValue;
+          if (!/[\u4e00-\u9fff]/.test(text)) return;
+          const frag = document.createDocumentFragment();
+          const parts = text.split(/([\u4e00-\u9fff]+)/g);
+          parts.forEach(part => {
+             if (/[\u4e00-\u9fff]/.test(part)) {
+                segmentChineseChunk(part).forEach(t => {
+                   const span = document.createElement('span'); 
+                   span.className = 'zh-word'; 
+                   span.dataset.text = t; 
+                   span.textContent = t;
+                   frag.appendChild(span);
+                });
+             } else { 
+               frag.appendChild(document.createTextNode(part)); 
+             }
+          });
+          node.parentNode.replaceChild(frag, node);
+       } else if (node.nodeType === Node.ELEMENT_NODE && !['SCRIPT','STYLE','TEXTAREA'].includes(node.tagName)) {
+          Array.from(node.childNodes).forEach(wrapChineseNodes);
+       }
+    }
+
+    function injectPinyinInRoot() {
+       const { pinyin } = pinyinPro;
+       els.root.querySelectorAll('.zh-word').forEach(span => {
+          const txt = span.dataset.text;
+          const py = pinyin(txt, { toneType: 'mark', type: 'array' }).join(' ');
+          span.innerHTML = `<span class="zh-pinyin">${py}</span><span class="zh-base">${txt}</span>`;
+          span.dataset.pinyin = py;
+       });
+    }
+
+    function highlightNotes() {
+       els.root.querySelectorAll('.note-highlight').forEach(s => s.parentNode.replaceChild(document.createTextNode(s.textContent), s));
+       els.root.querySelectorAll('.note-indicator').forEach(e => e.remove());
+       els.root.normalize(); 
+       const notes = state.currentFile ? (state.notes[state.currentFile] || []) : [];
+       if (!notes.length) return;
+       const sortedNotes = [...notes].sort((a,b) => b.text.length - a.text.length);
+       const blocks = els.root.querySelectorAll('p, h1, h2, h3, h4, li, div, td, blockquote');
+       sortedNotes.forEach(note => {
+          const target = note.text; 
+          if (!target) return;
+          blocks.forEach(block => {
+             const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                acceptNode: n => (n.parentNode.classList.contains('zh-pinyin') || n.parentNode.classList.contains('note-highlight')) 
+                  ? NodeFilter.FILTER_REJECT 
+                  : NodeFilter.FILTER_ACCEPT
+             });
+             const map = []; 
+             let str = "";
+             while (walker.nextNode()) { 
+               map.push({n: walker.currentNode, start: str.length, len: walker.currentNode.nodeValue.length}); 
+               str += walker.currentNode.nodeValue; 
+             }
+             let searchIdx = 0;
+             while (true) {
+                const idx = str.indexOf(target, searchIdx);
+                if (idx === -1) break;
+                const end = idx + target.length;
+                let lastWrap = null;
+                let possible = true;
+                for (const m of map) {
+                   const mEnd = m.start + m.len;
+                   if (mEnd <= idx || m.start >= end) continue;
+                   if (!m.n.parentNode) { 
+                     possible = false; 
+                     break; 
+                   } 
+                }
+                if (possible) {
+                    for (const m of map) {
+                       const mEnd = m.start + m.len;
+                       if (mEnd <= idx || m.start >= end) continue;
+                       const s = Math.max(0, idx - m.start);
+                       const e = Math.min(m.len, end - m.start);
+                       if (!m.n.parentNode) continue;
+                       const range = document.createRange();
+                       range.setStart(m.n, s); 
+                       range.setEnd(m.n, e);
+                       const span = document.createElement('span');
+                       span.className = 'note-highlight'; 
+                       span.dataset.noteId = note.id; 
+                       span.textContent = m.n.nodeValue.substring(s, e);
+                       span.onclick = (ev) => { 
+                         ev.stopPropagation(); 
+                         showNotePopup(span, note.note); 
+                       };
+                       range.deleteContents(); 
+                       range.insertNode(span);
+                       lastWrap = span;
+                    }
+                    if (lastWrap) { 
+                      const pin = document.createElement('span'); 
+                      pin.className = 'note-indicator'; 
+                      pin.textContent = '📌'; 
+                      lastWrap.appendChild(pin); 
+                    }
+                }
+                searchIdx = end;
+             }
+          });
+       });
+    }
+
+    // --- Selection popup helpers ---
+    function hideSelectionPopup() {
+      const p = els.popups.trans;
+      if (p) p.style.display = 'none';
+      if (els.overlays.selection) {
+        els.overlays.selection.classList.remove('visible');
+      }
+    }
+
+    function handleSelectionPopup() {
+      // If popup already open, ignore selection changes to avoid flicker
+      if (els.popups.trans && els.popups.trans.style.display === 'block') return;
+
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount) {
+        hideSelectionPopup();
+        return;
+      }
+
+      let text = sel.toString().replace(/[\r\n]+/g, ' ').trim();
+      if (!text) {
+        hideSelectionPopup();
+        return;
+      }
+
+      const anchorNode = sel.anchorNode;
+      if (!anchorNode || !els.root.contains(anchorNode)) {
+        hideSelectionPopup();
+        return;
+      }
+
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+
+      showTransPopup(rect, text);
+    }
+
+    // --- EVENTS ---
+    els.root.addEventListener('click', (e) => {
+      if (e.target.classList.contains('note-highlight') || e.target.closest('.note-highlight')) return;
+      const span = e.target.closest('.zh-word');
+      if (span) {
+        if (span.classList.contains('active')) {
+            span.classList.remove('active');
+            span.querySelector('.zh-tooltip')?.remove();
+            return;
+        }
+        document.querySelectorAll('.zh-word.active').forEach(el => { 
+          el.classList.remove('active'); 
+          el.querySelector('.zh-tooltip')?.remove(); 
+        });
+        span.classList.add('active');
+        createTooltip(span, getTranslation(span.dataset.text));
+      }
+    });
+
+    // Desktop: selection -> mouseup
+    els.root.addEventListener('mouseup', () => {
+      if (isMobile()) return; // mobile handled via selectionchange
+      handleSelectionPopup();
+    });
+
+    // Mobile: selectionchange with extra delay before showing dialog
+    document.addEventListener('selectionchange', () => {
+      if (!isMobile()) return;
+      if (mobileSelectionTimer) clearTimeout(mobileSelectionTimer);
+      mobileSelectionTimer = setTimeout(() => {
+        handleSelectionPopup();
+      }, MOBILE_SELECTION_DELAY);
+    });
+
+    function showNotePopup(target, text) {
+       document.querySelectorAll('.popup-note').forEach(e=>e.remove());
+       const p = document.createElement('div'); 
+       p.className = 'popup-base popup-note';
+       p.innerHTML = `
+         <div class="popup-header">
+           <span>Note</span>
+           <span class="close-x">✕</span>
+         </div>
+         <div class="popup-body">${text}</div>`;
+       document.body.appendChild(p);
+       const r = target.getBoundingClientRect();
+       p.style.top = (r.bottom + window.scrollY + 5) + 'px';
+       p.style.left = (r.left + window.scrollX) + 'px';
+       const close = () => p.remove();
+       p.querySelector('.close-x').onclick = close;
+       setTimeout(() => document.addEventListener('click', function c(e){ 
+         if (!p.contains(e.target)) { 
+           close(); 
+           document.removeEventListener('click', c); 
+         } 
+       }), 100);
+    }
+
+    function showTransPopup(r, text) {
+      const p = els.popups.trans;
+      p.classList.add('selection-popup');
+
+      // Show overlay behind popup so clicks don't hit the text behind
+      if (els.overlays.selection) {
+        els.overlays.selection.classList.add('visible');
+      }
+
+      p.style.display = 'block';
+
+      if (isMobile()) {
+        // Mobile: bottom sheet
+        p.classList.add('mobile-bottom');
+        p.style.top = 'auto';
+        p.style.bottom = '1rem';
+        p.style.left = '50%';
+        p.style.transform = 'translateX(-50%)';
+      } else {
+        // Desktop: near selection
+        p.classList.remove('mobile-bottom');
+        p.style.top = (r.bottom + window.scrollY + 8) + 'px';
+        p.style.left = (r.left + window.scrollX) + 'px';
+        p.style.transform = 'none';
+      }
+
+      p.innerHTML = `
+        <div class="popup-header">
+          <span>Selection</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="speak-btn" id="btn-speak" title="Speak selection">🔊</button>
+            <span class="close-x">✕</span>
+          </div>
+        </div>
+        <div class="popup-body">
+          <div style="font-weight:500;margin-bottom:8px; font-size:0.83rem;">
+            "${text.substring(0,40)}${text.length>40?'...':''}"
+          </div>
+          <div class="btn-group">
+            <button class="popup-btn bg-blue" id="btn-tr">Translate</button>
+            <button class="popup-btn bg-amber" id="btn-nt">Note</button>
+          </div>
+          <div id="tr-res" style="margin-top:10px;font-size:0.82rem;color:#475569"></div>
+        </div>
+      `;
+
+      const close = () => {
+        p.style.display = 'none';
+        if (els.overlays.selection) {
+          els.overlays.selection.classList.remove('visible');
+        }
+      };
+
+      p.querySelector('.close-x').onclick = (ev) => {
+        ev.stopPropagation();
+        close();
+      };
+
+      const speakBtn = document.getElementById('btn-speak');
+      if (speakBtn) {
+        speakBtn.onclick = (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          speakText(text);
+        };
+      }
+
+      document.getElementById('btn-tr').onclick = async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const resEl = document.getElementById('tr-res');
+        resEl.textContent = "Loading...";
+        const en = await getTranslation(text);
+        resEl.innerHTML = `
+          <div style="font-weight:700;color:#0f172a;margin-bottom:5px">${en}</div>
+          <button class="popup-btn bg-blue" style="width:100%;margin-top:6px;" id="btn-sv">Save</button>`;
+        document.getElementById('btn-sv').onclick = (e2) => { 
+          e2.preventDefault();
+          e2.stopPropagation();
+          state.translations.push({original:text, translated:en, lang: els.inputs.lang.value}); 
+          saveData('trans'); 
+          renderTransList(); 
+          toggleDrawer(true); 
+          close(); 
+        };
+      };
+
+      document.getElementById('btn-nt').onclick = (ev) => { 
+        ev.preventDefault();
+        ev.stopPropagation();
+        const n = prompt("Add Note:"); 
+        if (n){ 
+          addNote(text, n); 
+          close(); 
+        }
+      };
+    }
+
+    // Close selection popup when clicking outside
+    document.addEventListener('mousedown', e => { 
+      const p = els.popups.trans;
+      if (p.style.display === 'block' && !p.contains(e.target)) {
+        hideSelectionPopup();
+      }
+    });
+
+    if (els.overlays.selection) {
+      els.overlays.selection.addEventListener('click', hideSelectionPopup);
+    }
+
+    // --- UI HANDLERS ---
+    function toggleSidebar(open) {
+       if (isMobile()) {
+         if (open) { 
+           els.sidebar.classList.add('open'); 
+           els.overlays.sidebar.classList.add('visible'); 
+         }
+         else { 
+           els.sidebar.classList.remove('open'); 
+           els.overlays.sidebar.classList.remove('visible'); 
+         }
+       } else {
+         els.sidebar.classList.toggle('collapsed', !open);
+       }
+    }
+
+    function toggleDrawer(open) { 
+      els.drawer.classList.toggle('open', open); 
+      els.overlays.drawer.classList.toggle('visible', open); 
+    }
+    
+    els.btns.print.onclick = () => window.print();
+    els.btns.collapse.onclick = () => toggleSidebar(false);
+    els.btns.mobileMenu.onclick = () => toggleSidebar(true);
+    els.overlays.sidebar.onclick = () => toggleSidebar(false);
+    els.btns.fab.onclick = () => toggleDrawer(true);
+    els.btns.closeDrawer.onclick = () => toggleDrawer(false);
+    els.overlays.drawer.onclick = () => toggleDrawer(false);
+    
+    // Auto-render debounce
+    function debounce(func, wait) {
+      let timeout; 
+      return function(...args) { 
+        clearTimeout(timeout); 
+        timeout = setTimeout(() => func.apply(this, args), wait); 
+      };
+    }
+
+    els.mdInput.addEventListener('input', debounce(() => { 
+      renderMarkdown(); 
+      if (state.currentFile) addFile(state.currentFile, els.mdInput.value); 
+    }, 500));
+    
+    els.btns.render.onclick = () => { 
+      if (state.currentFile) addFile(state.currentFile, els.mdInput.value); 
+      else renderMarkdown(); 
+    };
+
+    els.toggles.pinyin.onchange = e => 
+      document.body.className = e.target.checked ? 'inline-pinyin-on' : 'inline-pinyin-off';
+    els.inputs.key.onchange = () => saveData('key');
+    els.inputs.lang.onchange = () => saveData('lang');
+    if (els.inputs.provider) {
+      els.inputs.provider.onchange = () => saveData('provider');
+    }
+
+    els.inputs.drop.onclick = () => els.inputs.file.click();
+    els.inputs.file.onchange = e => {
+       if (!e.target.files.length) return;
+       const file = e.target.files[0];
+       if (file.name.endsWith('.pdf')) {
+          els.mdInput.value = "Extracting PDF...";
+          file.arrayBuffer()
+            .then(ab => pdfjsLib.getDocument(ab).promise)
+            .then(pdf => {
+               let txt = ""; 
+               let p = Promise.resolve();
+               for (let i=1; i<=pdf.numPages; i++) {
+                 p = p.then(() => pdf.getPage(i)
+                   .then(page => page.getTextContent()
+                     .then(c => txt += c.items.map(s=>s.str).join(' ') + "\n\n")));
+               }
+               return p.then(() => { addFile(file.name, txt); });
+            });
+       } else { 
+         file.text().then(t => addFile(file.name, t)); 
+       }
+       e.target.value = '';
+    };
+
+    // Init
+    loadData();
+    if (state.files.length) {
+      loadFile(state.files[state.files.length-1].name);
+    } else { 
+      els.mdInput.value = "# 欢迎 (Huānyíng)\n\nTry clicking Chinese words in this reader, or select some text to create translations and sticky notes.\n\n- Click any **Chinese word** → tooltip with pinyin + translation\n- Select text → quick translate or add a note\n- Use the right-hand tools button (📝) to review saved vocabulary and notes.";
+      renderMarkdown(); 
+    }
+    renderTransList();
+  </script>
+</body>
+</html>
