@@ -1,5 +1,7 @@
 # Smart Chinese Reader
 
+[Demo](https://virak33.github.io/smart-chinese-reader)
+
 A modern, offline-friendly Chinese reading assistant that lets you:
 
 - Click on any **Chinese word** to see **pinyin + translation tooltip**
