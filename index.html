@@ -133,10 +133,10 @@
       font-size: 1.1rem; 
       color: var(--text-muted); 
       padding: 6px; 
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 999px; 
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
       transition: background var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
     }
     .icon-btn:hover { 
@@ -262,7 +262,7 @@
       transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast), background var(--transition-fast);
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      justify-content: center; 
       gap: 0.3rem;
       letter-spacing: 0.02em;
     }
@@ -309,7 +309,7 @@
       background: radial-gradient(circle at top left, rgba(56,189,248,0.18), rgba(241,245,249,0.9));
       border: 1px dashed rgba(148, 163, 184, 0.8);
       display: flex;
-      flex-direction: column;
+      flex-direction: column; 
       gap: 0.3rem;
       align-items: flex-start;
       justify-content: center;
@@ -1263,7 +1263,6 @@
   <div class="app">
     <div id="sidebar-overlay" class="overlay"></div>
     <div id="drawer-overlay" class="overlay"></div>
-    <!-- Overlay for selection popup on mobile -->
     <div id="selection-overlay" class="overlay"></div>
 
     <aside id="sidebar" class="sidebar">
@@ -1306,10 +1305,11 @@
             <option value="bing">Bing (Microsoft)</option>
             <option value="deepl">DeepL</option>
             <option value="youdao">Youdao</option>
+            <option value="custom">Custom API (Local)</option>
           </select>
           <div class="field-hint">
-            For Bing, use <code>KEY|REGION</code>, e.g. <code>abc123|eastasia</code>.<br>
-            For Youdao, call via your backend (front-end here only shows a placeholder).
+            For Bing, use <code>KEY|REGION</code>.<br>
+            For Custom, uses <code>https://translate.graphmining.dev</code>
           </div>
         </div>
       </div>
@@ -1318,7 +1318,7 @@
         <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; cursor:pointer; color:#4b5563;">
           <input type="checkbox" id="pinyin-inline-toggle"> Show Inline Pinyin
         </label>
-         
+          
         <div style="margin: 4px 0;">
           <label class="label" style="font-size:0.75rem; display:block; margin-bottom:4px;">Translate To</label>
           <select id="lang-select" style="width:100%; padding:6px;">
@@ -1388,7 +1388,6 @@
     <div id="translate-popup" class="popup-base" style="display:none;"></div>
   </div>
 
-  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://unpkg.com/pinyin-pro"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -1717,7 +1716,8 @@
       if (transCache.has(cacheKey)) return transCache.get(cacheKey);
 
       const key = els.inputs.key.value.trim();
-      if (!key) return "(No API Key)";
+      // Custom provider doesn't mandate a key here (handled in backend or unnecessary)
+      if (!key && provider !== 'custom') return "(No API Key)";
 
       try {
         let translated = null;
@@ -1736,6 +1736,24 @@
           const data = await res.json();
           translated = data.data?.translations?.[0]?.translatedText || null;
         } 
+        else if (provider === 'custom') {
+          // --- CUSTOM API LOGIC ---
+          const res = await fetch('https://translate.graphmining.dev/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: text,
+              to: lang,
+              from: 'zh-CN'
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            translated = data.translated;
+          } else {
+            translated = "Error: " + (data.error || "Unknown");
+          }
+        }
         else if (provider === 'bing') {
           // key format: "KEY|REGION"
           const [subscriptionKey, region] = key.split('|');
@@ -1825,7 +1843,7 @@
       }
 
       const key = els.inputs.key.value.trim();
-      if (!key) { 
+      if (!key && provider !== 'custom') { 
         alert("Please enter API Key first."); 
         return; 
       }
@@ -1858,7 +1876,33 @@
             }
             saveData('cache');
           }
-        } else {
+        } 
+        else if (provider === 'custom') {
+            // --- CUSTOM BATCH LOGIC ---
+            btn.textContent = `Processing ${wordList.length} words...`;
+            const res = await fetch('https://translate.graphmining.dev/translate-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    texts: wordList,
+                    to: lang,
+                    from: 'zh-CN'
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                Object.entries(data.results).forEach(([original, translated]) => {
+                    if(translated) {
+                        transCache.set(provider + "|" + original + "_" + lang, translated);
+                    }
+                });
+                saveData('cache');
+            } else {
+                throw new Error(data.error || "Batch failed");
+            }
+        }
+        else {
           // Other providers: call getTranslation one by one
           for (let i = 0; i < wordList.length; i++) {
             btn.textContent = `Trans: ${i + 1}/${wordList.length}...`;
