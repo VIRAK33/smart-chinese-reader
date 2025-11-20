@@ -32,6 +32,7 @@
       --shadow-soft: 0 18px 45px rgba(15, 23, 42, 0.08);
       --shadow-subtle: 0 10px 30px rgba(15, 23, 42, 0.06);
       --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      --page-font-size: 1rem;  /* base font size for A4 preview */
     }
 
     * { box-sizing: border-box; }
@@ -49,6 +50,12 @@
       color: var(--text); 
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
+    }
+
+    /* FULL DARK MODE (Option A) */
+    body.dark {
+      background: radial-gradient(circle at top, #020617 0, #020617 32%, #020617 70%);
+      color: #e5e7eb;
     }
 
     .app { 
@@ -227,6 +234,7 @@
       transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast); 
       background: rgba(255,255,255,0.92);
       font-family: inherit;
+      color: var(--text);
     }
 
     textarea {
@@ -391,6 +399,7 @@
     }
 
     .editor-shell {
+      margin-top:40px;
       border-radius: var(--radius-lg);
       padding: 0.75rem 0.85rem 0.85rem;
       background: rgba(248,250,252,0.96);
@@ -420,14 +429,6 @@
       border-radius: 999px;
       background: #22c55e;
       box-shadow: 0 0 0 5px rgba(34,197,94,0.16);
-    }
-
-    .editor-tag {
-      padding: 0.12rem 0.46rem;
-      border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.4);
-      font-size: 0.72rem;
-      color: #475569;
     }
 
     .editor-caption {
@@ -462,7 +463,7 @@
 
     #markdown-root { 
       line-height: 1.6; 
-      font-size: 1rem; 
+      font-size: var(--page-font-size, 1rem); 
       color: #334155; 
       position: relative;
       z-index: 1;
@@ -879,7 +880,7 @@
       width: 3.4rem; 
       height: 3.4rem;
       border-radius: 999px; 
-      background: radial-gradient(circle at top left, #38bdf8, #2563eb);
+      background: radial-gradient(circle at top left, #38bff8e0, #2564ebe1);
       color: white;
       border: none; 
       box-shadow: 0 18px 45px rgba(37,99,235,0.55); 
@@ -895,6 +896,32 @@
     .drawer-toggle-fab:hover { 
       transform: translateY(-1px) scale(1.03); 
       box-shadow: 0 24px 60px rgba(37,99,235,0.7);
+      filter: brightness(1.03);
+    }
+
+    .settings-fab {
+      position: fixed; 
+      right: 1.83rem; 
+      bottom: 5.2rem; 
+      width: 3.4rem; 
+      height: 3.4rem;
+      border-radius: 999px; 
+      background: radial-gradient(circle at top left, #7f848e6e, #374151);
+      color: white;
+      border: none; 
+      box-shadow: 0 18px 45px rgba(107,114,128,0.55); 
+      font-size: 1.5rem;
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      z-index: 35; 
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+    }
+
+    .settings-fab:hover { 
+      transform: translateY(-1px) scale(1.03); 
+      box-shadow: 0 24px 60px rgba(107,114,128,0.7);
       filter: brightness(1.03);
     }
 
@@ -939,6 +966,145 @@
     .speak-btn:active {
       transform: translateY(0);
       opacity: 0.9;
+    }
+
+    /* --- DARK THEME OVERRIDES (Option A) --- */
+    body.dark .sidebar {
+      background: rgba(15,23,42,0.96);
+      border-right-color: #1f2937;
+      box-shadow: 0 18px 45px rgba(15,23,42,0.9);
+    }
+
+    body.dark .file-list {
+      background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.9));
+      border-color: #1f2937;
+    }
+
+    body.dark .title,
+    body.dark .title-sub,
+    body.dark .editor-header-left,
+    body.dark .editor-caption {
+      color: #e5e7eb;
+    }
+
+    body.dark .dropzone {
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.25), rgba(15,23,42,0.98));
+      border-color: rgba(148,163,184,0.9);
+    }
+
+    body.dark .dropzone-sub {
+      color: #cbd5f5;
+    }
+
+    body.dark input[type="text"],
+    body.dark input[type="password"],
+    body.dark textarea,
+    body.dark select {
+      background: rgba(15,23,42,0.95);
+      border-color: #1f2937;
+      color: #e5e7eb;
+    }
+
+    body.dark input::placeholder,
+    body.dark textarea::placeholder {
+      color: #6b7280;
+    }
+
+    body.dark .editor-shell,
+    body.dark .page-shell {
+      background: rgba(15,23,42,0.96);
+      border-color: #1f2937;
+    }
+
+    body.dark .page-a4 {
+      background-color: #020617;
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,0.95);
+      background-image: 
+        linear-gradient(#111827 1px, transparent 1px),
+        linear-gradient(90deg, rgba(31,41,55,0.8) 1px, transparent 1px);
+    }
+
+    body.dark #markdown-root {
+      color: #e5e7eb;
+    }
+
+    body.dark #markdown-root h1,
+    body.dark #markdown-root h2 {
+      color: #f9fafb;
+      border-color: rgba(148,163,184,0.7);
+    }
+
+    body.dark .mobile-menu-btn {
+      background: rgba(15,23,42,0.98);
+      border-color: #1f2937;
+      color: #e5e7eb;
+    }
+
+    body.dark .right-drawer {
+      background: rgba(15,23,42,0.98);
+      border-left-color: #1f2937;
+      box-shadow: -18px 0 40px rgba(0,0,0,0.85);
+    }
+
+    body.dark .drawer-section {
+      border-bottom-color: #1f2937;
+    }
+
+    body.dark .section-header {
+      color: #e5e7eb;
+    }
+
+    body.dark .section-header:hover {
+      background: rgba(30,64,175,0.45);
+    }
+
+    body.dark .section-content {
+      background: rgba(15,23,42,0.96);
+    }
+
+    body.dark .card-item {
+      background: rgba(15,23,42,0.98);
+      border-color: #1f2937;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.55);
+    }
+
+    body.dark .card-summary {
+      color: #e5e7eb;
+    }
+
+    body.dark .card-text-block,
+    body.dark .card-body {
+      color: #e5e7eb;
+    }
+
+    body.dark .popup-base {
+      background: rgba(15,23,42,0.98);
+      border-color: #111827;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+    }
+
+    body.dark .popup-body {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    body.dark .popup-header {
+      background: linear-gradient(135deg, #020617, #0f172a);
+      border-bottom-color: #020617;
+    }
+
+    body.dark .zh-tooltip {
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    body.dark .note-highlight {
+      background-color: rgba(245, 158, 11, 0.35);
+      border-bottom-color: #f59e0b;
+    }
+
+    body.dark .note-indicator {
+      color: #facc15;
     }
 
     @media (max-width: 1024px) {
@@ -1216,6 +1382,7 @@
     </aside>
 
     <button id="drawer-fab" class="drawer-toggle-fab" title="Open study tools">📝</button>
+    <button id="settings-fab" class="settings-fab" title="Settings">⚙️</button>
     <div id="translate-popup" class="popup-base" style="display:none;"></div>
   </div>
 
@@ -1246,7 +1413,8 @@
         collapse: document.getElementById('collapse-sidebar'),
         mobileMenu: document.getElementById('mobile-menu-btn'),
         fab: document.getElementById('drawer-fab'),
-        closeDrawer: document.getElementById('close-drawer')
+        closeDrawer: document.getElementById('close-drawer'),
+        settingsFab: document.getElementById('settings-fab')
       },
       toggles: {
         pinyin: document.getElementById('pinyin-inline-toggle')
@@ -1297,6 +1465,14 @@
           const parsed = JSON.parse(cachedTrans);
           Object.entries(parsed).forEach(([k,v]) => transCache.set(k, v));
         }
+        
+        const pageFontSize = localStorage.getItem('pageFontSize');
+        if (pageFontSize) {
+          document.documentElement.style.setProperty('--page-font-size', pageFontSize + 'rem');
+        }
+        
+        const darkMode = localStorage.getItem('darkMode');
+        if (darkMode === 'true') document.body.classList.add('dark');
       } catch(e) {}
     }
 
@@ -1435,7 +1611,7 @@
              <div class="card-row-label">Original</div>
              <div class="card-text-block card-content-area pinyin-hidden"></div>
              <div class="card-row-label">Translation (${t.lang || 'en'})</div>
-             <div class="card-text-block">${t.translated}</div>
+             <div class="card-text-block">${t.translated.replace(/\n/g, '<br>')}</div>
              <div class="card-actions"><button class="btn-xs btn-del">Delete</button></div>
            </div>
          `;
@@ -1974,7 +2150,7 @@
             <button class="popup-btn bg-blue" id="btn-tr">Translate</button>
             <button class="popup-btn bg-amber" id="btn-nt">Note</button>
           </div>
-          <div id="tr-res" style="margin-top:10px;font-size:0.82rem;color:#475569"></div>
+          <div id="tr-res" style="margin-top:10px;font-size:0.82rem;color:#475569; max-height: 60vh; overflow-y: auto;"></div>
         </div>
       `;
 
@@ -2006,7 +2182,7 @@
         resEl.textContent = "Loading...";
         const en = await getTranslation(text);
         resEl.innerHTML = `
-          <div style="font-weight:700;color:#0f172a;margin-bottom:5px">${en}</div>
+          <div style="font-weight:700;color:#0f172a;margin-bottom:5px">${en.replace(/\n/g, '<br>')}</div>
           <button class="popup-btn bg-blue" style="width:100%;margin-top:6px;" id="btn-sv">Save</button>`;
         document.getElementById('btn-sv').onclick = (e2) => { 
           e2.preventDefault();
@@ -2062,6 +2238,74 @@
       els.drawer.classList.toggle('open', open); 
       els.overlays.drawer.classList.toggle('visible', open); 
     }
+
+    function showSettingsPopup() {
+      // Remove existing settings popup
+      document.querySelectorAll('.settings-popup').forEach(e => e.remove());
+
+      const popup = document.createElement('div');
+      popup.className = 'popup-base settings-popup';
+      popup.style.position = 'fixed';
+      popup.style.right = '5rem';
+      popup.style.bottom = '4rem';
+      popup.style.zIndex = '40';
+      popup.innerHTML = `
+        <div class="popup-header">
+          <span>Settings</span>
+          <span class="close-x">✕</span>
+        </div>
+        <div class="popup-body">
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 0.8rem; font-weight: 600;">Font Size (Page)</label>
+            <input type="range" id="font-size-slider" min="0.8" max="1.5" step="0.1" value="1" style="width: 100%; margin-top: 4px;">
+          </div>
+          <div>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600;">
+              <input type="checkbox" id="dark-mode-toggle">
+              Dark Mode
+            </label>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(popup);
+
+      const close = () => popup.remove();
+      popup.querySelector('.close-x').onclick = close;
+
+      // Font size for A4 preview
+      const fontSlider = document.getElementById('font-size-slider');
+      const savedSize = localStorage.getItem('pageFontSize') || '1';
+      fontSlider.value = savedSize;
+      document.documentElement.style.setProperty('--page-font-size', savedSize + 'rem');
+      fontSlider.oninput = (e) => {
+        const size = e.target.value;
+        document.documentElement.style.setProperty('--page-font-size', size + 'rem');
+        localStorage.setItem('pageFontSize', size);
+      };
+
+      // Dark mode
+      const darkToggle = document.getElementById('dark-mode-toggle');
+      darkToggle.checked = document.body.classList.contains('dark');
+      darkToggle.onchange = (e) => {
+        if (e.target.checked) {
+          document.body.classList.add('dark');
+          localStorage.setItem('darkMode', 'true');
+        } else {
+          document.body.classList.remove('dark');
+          localStorage.setItem('darkMode', 'false');
+        }
+      };
+
+      // Close on outside click
+      setTimeout(() => {
+        document.addEventListener('click', function c(e) {
+          if (!popup.contains(e.target) && e.target !== els.btns.settingsFab) {
+            close();
+            document.removeEventListener('click', c);
+          }
+        });
+      }, 100);
+    }
     
     els.btns.print.onclick = () => window.print();
     els.btns.collapse.onclick = () => toggleSidebar(false);
@@ -2070,6 +2314,7 @@
     els.btns.fab.onclick = () => toggleDrawer(true);
     els.btns.closeDrawer.onclick = () => toggleDrawer(false);
     els.overlays.drawer.onclick = () => toggleDrawer(false);
+    els.btns.settingsFab.onclick = () => showSettingsPopup();
     
     // Auto-render debounce
     function debounce(func, wait) {
@@ -2090,8 +2335,13 @@
       else renderMarkdown(); 
     };
 
-    els.toggles.pinyin.onchange = e => 
-      document.body.className = e.target.checked ? 'inline-pinyin-on' : 'inline-pinyin-off';
+    // FIX: pinyin toggle should not overwrite other classes (like dark)
+    els.toggles.pinyin.onchange = e => {
+      const on = e.target.checked;
+      document.body.classList.toggle('inline-pinyin-on', on);
+      document.body.classList.toggle('inline-pinyin-off', !on);
+    };
+
     els.inputs.key.onchange = () => saveData('key');
     els.inputs.lang.onchange = () => saveData('lang');
     if (els.inputs.provider) {
